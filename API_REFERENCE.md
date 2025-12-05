@@ -1,0 +1,936 @@
+# GenSchedule AI - API Quick Reference & Technology Guide
+
+---
+
+## Table of Contents
+
+1. [Technology Stack](#technology-stack)
+2. [TypeScript Interfaces](#typescript-interfaces)
+3. [Class Methods Reference](#class-methods-reference)
+4. [Component Props & State](#component-props--state)
+5. [Event Handlers](#event-handlers)
+6. [Utility Functions](#utility-functions)
+7. [Configuration](#configuration)
+8. [Communication Protocol](#communication-protocol)
+
+---
+
+## Technology Stack
+
+### Frontend Framework
+
+| Technology | Version | Use Case |
+|-----------|---------|----------|
+| **React** | 19.2.1 | UI framework with hooks |
+| **TypeScript** | 5.8.2 | Type safety & IDE support |
+| **Vite** | 6.2.0 | Build tool & dev server |
+| **Tailwind CSS** | (via Vite config) | Utility-first CSS |
+| **Lucide React** | 0.555.0 | SVG icons |
+
+### Build Tools
+
+| Tool | Version | Purpose |
+|------|---------|---------|
+| @vitejs/plugin-react | 5.0.0 | JSX transformation |
+| @types/node | 22.14.0 | Node type definitions |
+
+### Package.json Scripts
+
+```json
+{
+  "scripts": {
+    "dev": "vite",              // Start dev server (port 3000)
+    "build": "vite build",      // Production build
+    "preview": "vite preview"   // Preview build locally
+  }
+}
+```
+
+### Development Setup
+
+```bash
+# Install dependencies
+npm install
+
+# Run development server
+npm run dev
+# → Server runs on http://localhost:3000
+
+# Build for production
+npm run build
+# → Output in dist/ directory
+
+# Preview production build
+npm run preview
+```
+
+---
+
+## TypeScript Interfaces
+
+### Course Interface
+
+```typescript
+interface Course {
+  id: string;                    // Unique identifier (e.g., "1", "uuid-123")
+  code: string;                  // Course code (e.g., "CS301 Algo")
+  creditHours: number;           // Credit hours (1-4, typically)
+  isLab: boolean;                // Whether it's a lab course
+  sessionsRequired: number;      // Sessions per week (1-3 typical)
+}
+```
+
+**Example:**
+```typescript
+const course: Course = {
+  id: "1",
+  code: "CS301 Algo",
+  creditHours: 4,
+  isLab: false,
+  sessionsRequired: 3
+};
+```
+
+**Usage in App:**
+```typescript
+const [courses, setCourses] = useState<Course[]>([]);
+
+// Add course
+setCourses([...courses, newCourse]);
+
+// Remove course
+setCourses(courses.filter(c => c.id !== courseId));
+```
+
+---
+
+### Instructor Interface
+
+```typescript
+interface Instructor {
+  id: string;                    // Unique identifier
+  name: string;                  // Full name
+  assignedCourses: string[];     // Array of course codes (not IDs)
+}
+```
+
+**Example:**
+```typescript
+const instructor: Instructor = {
+  id: "1",
+  name: "Dr. Alan Turing",
+  assignedCourses: ["CS301 Algo", "CS303 AI"]
+};
+```
+
+**Usage in App:**
+```typescript
+const [instructors, setInstructors] = useState<Instructor[]>([]);
+
+// Add instructor
+setInstructors([...instructors, newInstructor]);
+
+// Update assigned courses
+const updated = {
+  ...instructor,
+  assignedCourses: ["CS301 Algo", "CS304 Net"]
+};
+```
+
+---
+
+### Period Interface
+
+```typescript
+interface Period {
+  id: number;                    // Sequential ID (1, 2, 3, ...)
+  timeRange: string;             // Format: "HH:MM-HH:MM" (e.g., "08:00-09:00")
+  isBreak: boolean;              // true = break period, false = class slot
+  isLabSlot: boolean;            // true = can schedule labs, false = regular slot
+}
+```
+
+**Example:**
+```typescript
+const period: Period = {
+  id: 1,
+  timeRange: "08:00-09:00",
+  isBreak: false,
+  isLabSlot: false
+};
+
+const breakPeriod: Period = {
+  id: 3,
+  timeRange: "10:00-10:30",
+  isBreak: true,
+  isLabSlot: false
+};
+
+const labSlot: Period = {
+  id: 7,
+  timeRange: "14:00-16:30",
+  isBreak: false,
+  isLabSlot: true
+};
+```
+
+**Default Periods:**
+```typescript
+const DEFAULT_PERIODS: Period[] = [
+  { id: 1, timeRange: "08:00-09:00", isBreak: false, isLabSlot: false },
+  { id: 2, timeRange: "09:00-10:00", isBreak: false, isLabSlot: false },
+  { id: 3, timeRange: "10:00-10:30", isBreak: true,  isLabSlot: false },
+  { id: 4, timeRange: "10:30-11:30", isBreak: false, isLabSlot: false },
+  { id: 5, timeRange: "11:30-12:30", isBreak: false, isLabSlot: false },
+  { id: 6, timeRange: "12:30-14:00", isBreak: true,  isLabSlot: false },
+  { id: 7, timeRange: "14:00-16:30", isBreak: false, isLabSlot: true  }
+];
+```
+
+---
+
+### ClassSession Interface
+
+```typescript
+interface ClassSession {
+  courseCode: string;            // Course code (must match Course.code)
+  dayIndex: number;              // Day index: 0=Monday, 1=Tuesday, ..., 5=Saturday
+  periodId: number;              // Period ID (must match Period.id)
+  instructorName: string;        // Instructor name (must match Instructor.name)
+}
+```
+
+**Example:**
+```typescript
+const session: ClassSession = {
+  courseCode: "CS301 Algo",
+  dayIndex: 0,                   // Monday
+  periodId: 1,                   // 08:00-09:00
+  instructorName: "Dr. Alan Turing"
+};
+```
+
+**Usage - Generated by Scheduler:**
+```typescript
+// Result from genetic algorithm
+const schedule: ClassSession[] = [
+  { courseCode: "CS301 Algo", dayIndex: 0, periodId: 1, instructorName: "Dr. Alan" },
+  { courseCode: "CS302 DB", dayIndex: 1, periodId: 2, instructorName: "Dr. Codd" },
+  // ... more sessions
+];
+```
+
+---
+
+### ScheduleResult Interface
+
+```typescript
+interface ScheduleResult {
+  genes: ClassSession[];         // All scheduled class sessions
+  fitness: number;               // Quality metric (negative penalty value)
+}
+```
+
+**Example:**
+```typescript
+const result: ScheduleResult = {
+  genes: [
+    { courseCode: "CS301 Algo", dayIndex: 0, periodId: 1, instructorName: "Dr. Alan" },
+    { courseCode: "CS302 DB", dayIndex: 1, periodId: 2, instructorName: "Dr. Codd" },
+    // ... more sessions
+  ],
+  fitness: -0  // Perfect schedule (no violations)
+};
+```
+
+---
+
+### Constants
+
+```typescript
+export const DAYS: string[] = [
+  "Monday",
+  "Tuesday",
+  "Wednesday",
+  "Thursday",
+  "Friday",
+  "Saturday"
+];
+
+// Used as:
+// DAYS[0] = "Monday"
+// DAYS[dayIndex] = day name
+```
+
+---
+
+## Class Methods Reference
+
+### GeneticScheduler Class
+
+**File:** `services/scheduler.ts`
+
+#### Constructor
+
+```typescript
+constructor(
+  courses: Course[],
+  instructors: Instructor[],
+  dayLayouts: Map<number, Period[]>
+)
+```
+
+**Purpose:** Initialize the scheduler with problem data
+
+**Parameters:**
+- `courses`: Array of courses to schedule
+- `instructors`: Array of instructors
+- `dayLayouts`: Map of day index (0-5) to Period arrays
+
+**Returns:** GeneticScheduler instance
+
+**Example:**
+```typescript
+const dayLayouts = new Map<number, Period[]>();
+for (let day = 0; day < 6; day++) {
+  dayLayouts.set(day, periods);  // Same periods for all days
+}
+
+const scheduler = new GeneticScheduler(courses, instructors, dayLayouts);
+```
+
+---
+
+#### initPopulation()
+
+```typescript
+initPopulation(popSize: number): void
+```
+
+**Purpose:** Create initial population of random schedules
+
+**Parameters:**
+- `popSize`: Number of schedules to create (10-200, recommend 50)
+
+**Returns:** void (populates internal population)
+
+**Time Complexity:** O(popSize × courses × sessions)
+
+**Example:**
+```typescript
+scheduler.initPopulation(50);
+```
+
+---
+
+#### select()
+
+```typescript
+select(): Schedule
+```
+
+**Purpose:** Tournament selection - select best individual from random subset
+
+**Algorithm:**
+1. Randomly pick 3 individuals
+2. Return the one with highest fitness
+
+**Parameters:** None
+
+**Returns:** Selected Schedule instance
+
+**Tournament Size:** Fixed at 3
+
+**Example:**
+```typescript
+const parent1 = scheduler.select();
+const parent2 = scheduler.select();
+```
+
+---
+
+#### crossover()
+
+```typescript
+crossover(parent1: Schedule, parent2: Schedule): Schedule
+```
+
+**Purpose:** Create offspring from two parents using single-point crossover
+
+**Algorithm:**
+1. Copy all genes from parent1
+2. Pick random crossover point
+3. Replace genes after point with parent2 genes
+
+**Parameters:**
+- `parent1`: First parent schedule
+- `parent2`: Second parent schedule
+
+**Returns:** New child Schedule
+
+**Example:**
+```typescript
+const child = scheduler.crossover(parent1, parent2);
+```
+
+---
+
+#### mutate()
+
+```typescript
+mutate(ind: Schedule, mutationRate: number): void
+```
+
+**Purpose:** Introduce random variations to schedule
+
+**Algorithm:**
+For each gene:
+- With probability `mutationRate`:
+  - Pick random day (0-5)
+  - Pick random non-break period
+  - Update gene's dayIndex and periodId
+
+**Parameters:**
+- `ind`: Schedule to mutate
+- `mutationRate`: Probability per gene (0.0-1.0), recommend 0.05-0.15
+
+**Returns:** void (modifies ind.genes)
+
+**Example:**
+```typescript
+scheduler.mutate(individual, 0.1);  // 10% mutation rate
+```
+
+---
+
+#### solve()
+
+```typescript
+async solve(
+  generations: number,
+  popSize: number,
+  mutationRate: number,
+  onProgress?: (gen: number, fitness: number) => void
+): Promise<Schedule>
+```
+
+**Purpose:** Main evolutionary loop - evolve population toward optimal solution
+
+**Parameters:**
+- `generations`: Max generations (100-2000, recommend 500)
+- `popSize`: Population size (10-200, recommend 50)
+- `mutationRate`: Mutation probability (0.01-0.5, recommend 0.1)
+- `onProgress`: Optional callback for progress updates
+
+**Returns:** Promise<Schedule> - resolves to best schedule found
+
+**Callback Signature:**
+```typescript
+(gen: number, fitness: number) => void
+// gen: current generation number
+// fitness: best fitness in current generation
+```
+
+**Non-blocking:** Uses setTimeout for UI responsiveness
+
+**Example:**
+```typescript
+const result = await scheduler.solve(
+  500,                                    // generations
+  50,                                     // population size
+  0.1,                                    // mutation rate
+  (gen, fitness) => {
+    console.log(`Gen ${gen}: Fitness ${fitness}`);
+    setProgress({ gen, fitness });        // Update UI
+  }
+);
+
+console.log(result.genes);                // Scheduled sessions
+console.log(result.fitness);              // Quality score
+```
+
+---
+
+### Schedule Class
+
+**File:** `services/scheduler.ts`
+
+#### Constructor
+
+```typescript
+constructor(
+  courses: Course[],
+  instructors: Instructor[],
+  dayLayouts: Map<number, Period[]>
+)
+```
+
+**Purpose:** Create a schedule instance (individual in GA)
+
+**Parameters:** Same as GeneticScheduler
+
+---
+
+#### initialize()
+
+```typescript
+initialize(): void
+```
+
+**Purpose:** Generate random initial schedule
+
+**Algorithm:**
+1. For each course:
+   - Find assigned instructor
+   - For each session required:
+     - Pick random day (0-5)
+     - Pick random non-break period
+     - Add ClassSession
+
+**Returns:** void (populates genes)
+
+**Example:**
+```typescript
+const schedule = new Schedule(courses, instructors, dayLayouts);
+schedule.initialize();
+```
+
+---
+
+#### calculateFitness()
+
+```typescript
+calculateFitness(): void
+```
+
+**Purpose:** Evaluate schedule quality using multi-constraint system
+
+**Constraints Checked:**
+1. Double booking: -200 per violation
+2. Instructor conflicts: -200 per violation
+3. Lab allocation: -50 per lab violation
+4. Course frequency: -100 × shortage, -50 × excess
+5. Same-day sessions: -30 per violation
+6. Gaps: -20 per free slot
+
+**Returns:** void (sets fitness property)
+
+**Formula:** fitness = -(sum of all penalties)
+
+**Example:**
+```typescript
+schedule.calculateFitness();
+console.log(schedule.fitness);  // e.g., -150
+```
+
+---
+
+## Component Props & State
+
+### App Component
+
+**File:** `App.tsx`
+
+**State Variables:**
+
+```typescript
+// UI Navigation
+const [showLanding, setShowLanding] = useState(true);
+const [activeTab, setActiveTab] = useState<'setup' | 'settings' | 'results'>('setup');
+
+// Data Input
+const [courses, setCourses] = useState<Course[]>([...]);
+const [instructors, setInstructors] = useState<Instructor[]>([...]);
+const [periods, setPeriods] = useState<Period[]>(DEFAULT_PERIODS);
+
+// GA Parameters
+const [gaParams, setGaParams] = useState({
+  populationSize: 50,
+  generations: 500,
+  mutationRate: 0.1
+});
+
+// Results
+const [schedule, setSchedule] = useState<ClassSession[] | null>(null);
+const [isGenerating, setIsGenerating] = useState(false);
+const [progress, setProgress] = useState({ gen: 0, fitness: -1000 });
+
+// Form Inputs
+const [newCourse, setNewCourse] = useState<Partial<Course>>({...});
+const [newInst, setNewInst] = useState({ name: '', courseCodes: '' });
+```
+
+---
+
+## Event Handlers
+
+### Course Management
+
+```typescript
+// Add Course
+const handleAddCourse = () => {
+  if (!newCourse.code) return;
+  setCourses([...courses, { 
+    id: Date.now().toString(), 
+    code: newCourse.code, 
+    creditHours: newCourse.creditHours || 3, 
+    isLab: newCourse.isLab || false, 
+    sessionsRequired: newCourse.sessionsRequired || 3 
+  }]);
+  setNewCourse({ code: '', creditHours: 3, isLab: false, sessionsRequired: 3 });
+};
+
+// Delete Course
+const handleDeleteCourse = (courseId: string) => {
+  setCourses(courses.filter(c => c.id !== courseId));
+};
+```
+
+### Instructor Management
+
+```typescript
+// Add Instructor
+const handleAddInstructor = () => {
+  if (!newInst.name) return;
+  const assigned = newInst.courseCodes.split(',').map(s => s.trim()).filter(Boolean);
+  setInstructors([...instructors, {
+    id: Date.now().toString(),
+    name: newInst.name,
+    assignedCourses: assigned
+  }]);
+  setNewInst({ name: '', courseCodes: '' });
+};
+
+// Delete Instructor
+const handleDeleteInstructor = (instId: string) => {
+  setInstructors(instructors.filter(i => i.id !== instId));
+};
+```
+
+### Period Configuration
+
+```typescript
+// Edit Period
+const handlePeriodChange = (index: number, field: keyof Period | 'start' | 'end', value: any) => {
+  const newPeriods = [...periods];
+  const period = { ...newPeriods[index] };
+
+  if (field === 'start' || field === 'end') {
+    const [start, end] = period.timeRange.split('-');
+    if (field === 'start') period.timeRange = `${value}-${end}`;
+    else period.timeRange = `${start}-${value}`;
+  } else {
+    (period as any)[field] = value;
+  }
+  
+  newPeriods[index] = period;
+  setPeriods(newPeriods);
+};
+
+// Add Period
+const addPeriod = () => {
+  const newId = periods.length + 1;
+  // ... calculate time
+  setPeriods([...periods, {
+    id: newId,
+    timeRange: `${startTime}-${endTime}`,
+    isBreak: false,
+    isLabSlot: false
+  }]);
+};
+
+// Remove Period
+const removePeriod = (index: number) => {
+  const newPeriods = periods.filter((_, i) => i !== index);
+  const reindexed = newPeriods.map((p, i) => ({...p, id: i + 1}));
+  setPeriods(reindexed);
+};
+```
+
+### Scheduler Execution
+
+```typescript
+// Generate Timetable
+const runGeneration = async () => {
+  setIsGenerating(true);
+  setSchedule(null);
+  setActiveTab('results');
+
+  // Prepare data
+  const layoutMap = new Map<number, Period[]>();
+  for(let i = 0; i < 6; i++) layoutMap.set(i, periods);
+
+  // Create scheduler
+  const solver = new GeneticScheduler(courses, instructors, layoutMap);
+  
+  // Run evolution
+  const result = await solver.solve(
+    gaParams.generations, 
+    gaParams.populationSize, 
+    gaParams.mutationRate,
+    (gen, fit) => {
+      setProgress({ gen, fitness: fit });
+    }
+  );
+
+  setSchedule(result.genes);
+  setIsGenerating(false);
+};
+```
+
+### Export
+
+```typescript
+// Download CSV
+const downloadCSV = () => {
+  if (!schedule) return;
+  let csv = "Day,Period,Time,Course,Instructor\n";
+  
+  const sorted = [...schedule].sort((a, b) => {
+    if (a.dayIndex !== b.dayIndex) return a.dayIndex - b.dayIndex;
+    return a.periodId - b.periodId;
+  });
+
+  sorted.forEach(s => {
+    const period = periods.find(p => p.id === s.periodId);
+    csv += `${DAYS[s.dayIndex]},${s.periodId},${period?.timeRange},${s.courseCode},${s.instructorName}\n`;
+  });
+
+  const blob = new Blob([csv], { type: 'text/csv' });
+  const url = window.URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'timetable.csv';
+  a.click();
+};
+```
+
+---
+
+## Utility Functions
+
+### Random Helpers
+
+```typescript
+// In scheduler.ts
+const randomInt = (min: number, max: number) => 
+  Math.floor(Math.random() * (max - min + 1)) + min;
+
+const randomDouble = () => 
+  Math.random();
+
+// Usage
+const day = randomInt(0, 5);           // Random day 0-5
+const mut = randomDouble() < 0.1;      // 10% chance
+```
+
+---
+
+## Configuration
+
+### Vite Config
+
+**File:** `vite.config.ts`
+
+```typescript
+import path from 'path';
+import { defineConfig, loadEnv } from 'vite';
+import react from '@vitejs/plugin-react';
+
+export default defineConfig(({ mode }) => {
+    const env = loadEnv(mode, '.', '');
+    return {
+      server: {
+        port: 3000,
+        host: '0.0.0.0',
+      },
+      plugins: [react()],
+      define: {
+        'process.env.API_KEY': JSON.stringify(env.GEMINI_API_KEY),
+        'process.env.GEMINI_API_KEY': JSON.stringify(env.GEMINI_API_KEY)
+      },
+      resolve: {
+        alias: {
+          '@': path.resolve(__dirname, '.'),
+        }
+      }
+    };
+});
+```
+
+### TypeScript Config
+
+**File:** `tsconfig.json`
+
+```json
+{
+  "compilerOptions": {
+    "target": "ES2020",
+    "useDefineForClassFields": true,
+    "lib": ["ES2020", "DOM", "DOM.Iterable"],
+    "module": "ESNext",
+    "skipLibCheck": true,
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true
+  },
+  "include": ["index.tsx", "App.tsx", "services", "types.ts"],
+  "references": [{ "path": "./tsconfig.app.json" }]
+}
+```
+
+### Package.json
+
+```json
+{
+  "name": "genschedule-ai",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "react": "^19.2.1",
+    "lucide-react": "^0.555.0",
+    "react-dom": "^19.2.1"
+  },
+  "devDependencies": {
+    "@types/node": "^22.14.0",
+    "@vitejs/plugin-react": "^5.0.0",
+    "typescript": "~5.8.2",
+    "vite": "^6.2.0"
+  }
+}
+```
+
+---
+
+## Communication Protocol
+
+### App ↔ Scheduler Communication
+
+```typescript
+// 1. App sends data to scheduler
+const layoutMap = new Map([[0, periods], [1, periods], ...]);
+const scheduler = new GeneticScheduler(courses, instructors, layoutMap);
+
+// 2. App awaits scheduler.solve() with callback
+const result = await scheduler.solve(500, 50, 0.1, (gen, fitness) => {
+  // 3. Scheduler calls callback with progress
+  setProgress({ gen, fitness });
+});
+
+// 4. Scheduler returns ScheduleResult
+setSchedule(result.genes);
+```
+
+### React Hook State Management
+
+```typescript
+// User Input
+userAction() → state change → re-render
+
+// Example:
+onChange() → setValue() → re-render with new value
+
+// Async Operations
+onClick() → setLoading(true) → async function → setResult() → setLoading(false) → re-render
+```
+
+### Data Transformation Pipeline
+
+```
+Raw User Input
+    ↓
+Course/Instructor/Period State
+    ↓
+GeneticScheduler Constructor
+    ↓
+Population Evolution (multiple generations)
+    ↓
+ScheduleResult Object
+    ↓
+ClassSession[]
+    ↓
+Timetable Grid Rendering
+```
+
+---
+
+## Performance Benchmarks
+
+### Typical Execution Times
+
+| Configuration | Time | Notes |
+|---------------|------|-------|
+| 20 courses, 50 pop, 100 gen | ~5 sec | Quick demo |
+| 20 courses, 50 pop, 500 gen | ~30 sec | Recommended |
+| 20 courses, 100 pop, 1000 gen | ~120 sec | High quality |
+
+### Memory Usage
+
+- Population (50 individuals): ~300KB
+- State variables: ~10KB
+- Total: ~350KB (minimal)
+
+### Optimization Tips
+
+1. Use lower population (30-50) for faster feedback
+2. Increase generations for better quality
+3. Adjust mutation based on problem difficulty
+4. Monitor fitness improvements - stop early if plateauing
+
+---
+
+## Common Patterns
+
+### Adding New Constraint
+
+```typescript
+// In Schedule.calculateFitness():
+// Add to penalty calculation:
+
+const newConstraint = ... // your logic
+if (violation) {
+  penalty += violationPenalty;
+}
+```
+
+### Adjusting Algorithm Parameters
+
+```typescript
+// Via UI Sliders
+<input type="range" min="10" max="200" step="10" 
+  value={gaParams.populationSize}
+  onChange={(e) => setGaParams({
+    ...gaParams, 
+    populationSize: parseInt(e.target.value)
+  })}
+/>
+
+// Or programmatically
+setGaParams({
+  populationSize: 100,
+  generations: 1000,
+  mutationRate: 0.15
+});
+```
+
+### Exporting Results
+
+```typescript
+// CSV Export (already implemented)
+downloadCSV();
+
+// For JSON Export (future enhancement)
+const json = JSON.stringify(schedule, null, 2);
+const blob = new Blob([json], { type: 'application/json' });
+// ... download blob as file
+```
+
+---
+
+**Version:** 1.0  
+**Last Updated:** December 5, 2025
