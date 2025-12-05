@@ -2,7 +2,7 @@
 
 **Project Name:** GenSchedule AI  
 **Version:** 0.0.0  
-**Author:** Ayush Sharma  
+**Author:** Ayush kumar 
 **Repository:** https://github.com/supernova0311/genschedule-ai  
 **Date Generated:** December 5, 2025
 
