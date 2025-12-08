@@ -176,7 +176,7 @@ This project is open source and available under the MIT License.
 
 ## Author
 
-[Ayush Sharma](https://github.com/supernova0311)
+[Ayush Kumar](https://github.com/supernova0311)
 
 ## Support
 
