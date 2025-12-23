@@ -8,44 +8,53 @@ An intelligent academic timetable generator powered by genetic algorithms. GenSc
 - Genetic algorithm engine for optimal schedule generation
 - Automatically resolves scheduling conflicts
 - Maximizes resource utilization
+- Real-time progress tracking during generation
 
 🎓 **Academic-Focused**
 - Support for courses, lab sessions, and multiple instructors
 - Flexible period management with break times
 - Lab slot designation and constraints
+- Support for multiple course sessions per week
 
 ⚙️ **Constraint Satisfaction**
 - Prevents double-booking conflicts (room conflicts)
 - Ensures instructor availability (no overlapping assignments)
 - Respects lab course requirements
 - Balances course distribution across weekdays
-- Prevents instructor fatigue with workload optimization
+- Minimizes gaps between classes
 
 📊 **Visual Interface**
-- Beautiful, modern UI built with React
+- Beautiful, modern UI built with React 19
 - Real-time schedule generation and visualization
 - Easy course and instructor management
-- Download schedule as JSON
+- Download schedule as CSV or PDF
 
 ## Tech Stack
 
-- **Frontend**: React 19, TypeScript, Vite
+- **Frontend**: React 19 (JavaScript, no TypeScript)
+- **Build Tool**: Vite 6.2 (fast dev server with HMR)
 - **Styling**: Tailwind CSS
 - **Icons**: Lucide React
+- **Export**: html2canvas + jsPDF for PDF generation
 - **Optimization**: Custom Genetic Algorithm Implementation
 
 ## Project Structure
 
 ```
-├── App.tsx                 # Main application component with UI
-├── types.ts               # TypeScript interfaces and constants
+├── App.jsx                      # Main application component with UI
+├── types.js                     # Constants and data structures
 ├── services/
-│   └── scheduler.ts       # Genetic algorithm scheduler implementation
-├── index.tsx              # React entry point
-├── index.html             # HTML template
-├── vite.config.ts         # Vite configuration
-├── tsconfig.json          # TypeScript configuration
-└── package.json           # Project dependencies
+│   └── scheduler.js             # Genetic algorithm scheduler
+├── index.jsx                    # React entry point
+├── index.html                   # HTML template
+├── vite.config.js               # Vite configuration
+├── package.json                 # Project dependencies
+└── documentation/
+    ├── README.md               # This file
+    ├── PROJECT_REPORT.md       # Detailed project report
+    ├── DOCUMENTATION_INDEX.md  # File structure guide
+    ├── API_REFERENCE.md        # API documentation
+    └── ARCHITECTURE_DIAGRAMS.md # Architecture overview
 ```
 
 ## Getting Started
@@ -56,9 +65,8 @@ An intelligent academic timetable generator powered by genetic algorithms. GenSc
 
 ### Installation
 
-1. Clone the repository:
+1. Navigate to the project directory:
 ```bash
-git clone https://github.com/supernova0311/genschedule-ai.git
 cd genschedule-ai
 ```
 
@@ -69,12 +77,12 @@ npm install
 
 ### Development
 
-Start the development server:
+Start the development server with Vite:
 ```bash
 npm run dev
 ```
 
-The application will be available at `http://localhost:5173`
+The application will be available at `http://localhost:5173` with hot module reloading enabled.
 
 ### Build
 
@@ -99,71 +107,139 @@ The scheduler uses a genetic algorithm to evolve schedules toward optimal soluti
    - Room conflicts (double-booking): -200 points
    - Instructor conflicts: -200 points
    - Lab constraint violations: -50 points
-   - Workload distribution: variable penalty
-3. **Selection**: Selects top-performing schedules for reproduction
-4. **Crossover & Mutation**: Creates new schedules by combining and modifying existing ones
-5. **Iteration**: Repeats until convergence or optimal solution is found
+   - Lab slot optimization: -10 points
+   - Course frequency violations: -100 to -50 points
+   - Class distribution: -30 points per issue
+   - Gap analysis: -20 points per gap
+
+3. **Selection**: Tournament selection picks top-performing schedules for reproduction
+4. **Crossover**: Creates new schedules by combining parent schedules
+5. **Mutation**: Randomly modifies schedules to prevent local optima
+6. **Iteration**: Repeats until convergence or optimal solution is found
 
 ### Data Models
 
-#### Course
-- `id`: Unique identifier
-- `code`: Course code (e.g., "CS101")
-- `creditHours`: Credit hours
-- `isLab`: Whether it's a lab course
-- `sessionsRequired`: Number of sessions per week
+#### Course (Object)
+```javascript
+{
+  id: string,              // Unique identifier
+  code: string,            // Course code (e.g., "CS301 Algo")
+  creditHours: number,     // Credit hours
+  isLab: boolean,          // Whether it's a lab course
+  sessionsRequired: number // Sessions per week
+}
+```
 
-#### Instructor
-- `id`: Unique identifier
-- `name`: Instructor name
-- `assignedCourses`: List of course codes they teach
+#### Instructor (Object)
+```javascript
+{
+  id: string,              // Unique identifier
+  name: string,            // Instructor name
+  assignedCourses: string[] // List of course codes
+}
+```
 
-#### Period
-- `id`: Period identifier
-- `timeRange`: Time slot (e.g., "08:00-09:00")
-- `isBreak`: Whether it's a break period
-- `isLabSlot`: Whether it can accommodate lab sessions
+#### Period (Object)
+```javascript
+{
+  id: number,              // Period identifier
+  timeRange: string,       // Time slot (e.g., "08:00-09:00")
+  isBreak: boolean,        // Whether it's a break period
+  isLabSlot: boolean       // Whether it's a lab time slot
+}
+```
 
-#### ClassSession
-- `courseCode`: Code of the course
-- `dayIndex`: Day of week (0=Monday, 5=Saturday)
-- `periodId`: Period identifier
-- `instructorName`: Assigned instructor name
+#### ClassSession (Object)
+```javascript
+{
+  courseCode: string,      // Course code
+  dayIndex: number,        // Day of week (0=Monday, 5=Saturday)
+  periodId: number,        // Period identifier
+  instructorName: string   // Assigned instructor name
+}
+```
 
 ## Usage
 
 1. **Add Courses**: Input course details including credit hours and required sessions
 2. **Add Instructors**: Add instructors and assign them to courses
 3. **Configure Periods**: Customize time periods, breaks, and lab slots
-4. **Generate Schedule**: Click the generate button to run the genetic algorithm
-5. **Download**: Export the generated schedule as JSON
+4. **Adjust Parameters**:
+   - Population Size (10-200): More schedules = better solution but slower
+   - Generations (100-2000): More iterations = better solution but slower
+   - Mutation Rate (0.01-0.5): Chance to randomly change a slot
+5. **Generate Schedule**: Click the generate button to run the genetic algorithm
+6. **Download**: Export the schedule as CSV or PDF
 
 ## Constraints & Rules
 
 - **No double-booking**: Each room (time slot) can only host one class
 - **Instructor availability**: No instructor can teach two classes at the same time
 - **Lab requirements**: Lab courses must be scheduled in designated lab time slots
-- **Workload distribution**: Attempts to balance instructor workload across the week
+- **Workload distribution**: Attempts to balance course distribution across days
 - **Break respect**: Classes are not scheduled during break periods
+- **Gap minimization**: Minimizes gaps between classes on each day
+
+## Export Options
+
+### CSV Export
+Downloads schedule as comma-separated values for Excel/Sheets
+
+### PDF Export
+Generates a professional PDF with:
+- Complete timetable view
+- Color-coded courses and labs
+- Instructor assignments
+- Time information
+
+## File Organization
+
+| File | Purpose |
+|------|---------|
+| `App.jsx` | Main UI component with landing page, tabs, and forms |
+| `types.js` | Constants (DAYS, DEFAULT_PERIODS) and data structures |
+| `services/scheduler.js` | Core genetic algorithm implementation |
+| `index.jsx` | React entry point that mounts App to DOM |
+| `vite.config.js` | Vite bundler configuration |
+| `index.html` | HTML template with root element |
 
 ## API Reference
 
-### GeneticScheduler
+### GeneticScheduler Class
 
-The main scheduler class that implements the genetic algorithm.
+Main class for genetic algorithm scheduling.
 
-```typescript
-const scheduler = new GeneticScheduler(
-  courses,
-  instructors,
-  dayLayouts,
-  populationSize,
-  generations,
-  mutationRate
+```javascript
+const scheduler = new GeneticScheduler(courses, instructors, dayLayouts);
+
+// Solve with parameters
+const result = await scheduler.solve(
+  generations,     // Number of iterations (int)
+  popSize,        // Population size (int)
+  mutationRate,   // Mutation probability (0-1)
+  onProgress      // Callback: (generation, fitness) => void
 );
 
-const result = scheduler.schedule();
-// Returns: { genes: ClassSession[], fitness: number }
+// Returns: Schedule object with genes[] and fitness score
+```
+
+### Schedule Class
+
+Represents one schedule solution.
+
+```javascript
+const schedule = new Schedule(courses, instructors, dayLayouts);
+
+schedule.initialize();        // Create random schedule
+schedule.calculateFitness();  // Calculate fitness score
+schedule.isLabPeriod(day, periodId);  // Check if slot is lab
+```
+
+### Helper Functions
+
+```javascript
+randomInt(min, max)    // Random integer in range
+randomDouble()         // Random number 0-1
 ```
 
 ## Contributing

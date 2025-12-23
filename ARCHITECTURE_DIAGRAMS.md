@@ -1,209 +1,187 @@
-# GenSchedule AI - Visual Architecture & Flow Diagrams
+# GenSchedule AI - Architecture Diagrams
 
-This document contains detailed ASCII diagrams for system architecture, data flow, and workflows.
+Visual representation of GenSchedule AI system architecture and data flows.
 
 ---
 
 ## 1. Complete System Architecture
 
 ```
-┌────────────────────────────────────────────────────────────────────────────────┐
-│                          GenSchedule AI Application                           │
-├────────────────────────────────────────────────────────────────────────────────┤
-│                                                                                │
-│  ┌──────────────────────────────────────────────────────────────────────────┐ │
-│  │                      PRESENTATION LAYER (React/TSX)                      │ │
-│  ├──────────────────────────────────────────────────────────────────────────┤ │
-│  │                                                                          │ │
-│  │  ┌─────────────────────┐  ┌──────────────────────┐  ┌──────────────┐   │ │
-│  │  │  Landing Page       │  │  Main Workspace      │  │  Tab System  │   │ │
-│  │  ├─────────────────────┤  ├──────────────────────┤  ├──────────────┤   │ │
-│  │  │ - Hero Section      │  │ - Header             │  │ 1. Setup     │   │ │
-│  │  │ - Features Showcase │  │ - Tab Navigation     │  │ 2. Settings  │   │ │
-│  │  │ - CTA Button        │  │ - Content Area       │  │ 3. Results   │   │ │
-│  │  │ - Animations        │  │ - Responsive Layout  │  │              │   │ │
-│  │  └─────────────────────┘  └──────────────────────┘  └──────────────┘   │ │
-│  │         │                          │                        │           │ │
-│  │         │ onEnter()               │ State Updates          │           │ │
-│  │         └──────────────────────────┴────────────────────────┘           │ │
-│  │                                                                          │ │
-│  │  ┌────────────────────────────────────────────────────────────────────┐ │ │
-│  │  │              STATE MANAGEMENT (React Hooks)                        │ │ │
-│  │  ├────────────────────────────────────────────────────────────────────┤ │ │
-│  │  │                                                                    │ │ │
-│  │  │  useState() Variables:                                            │ │ │
-│  │  │  ├─ courses: Course[]              (User inputs)                  │ │ │
-│  │  │  ├─ instructors: Instructor[]      (User inputs)                  │ │ │
-│  │  │  ├─ periods: Period[]              (Configuration)                │ │ │
-│  │  │  ├─ gaParams: {pop, gen, mut}      (Algorithm tuning)             │ │ │
-│  │  │  ├─ schedule: ClassSession[] | null (Results)                    │ │ │
-│  │  │  ├─ isGenerating: boolean           (UI state)                    │ │ │
-│  │  │  ├─ progress: {gen, fitness}       (Real-time feedback)           │ │ │
-│  │  │  └─ activeTab: 'setup'|'settings'|'results' (Navigation)          │ │ │
-│  │  │                                                                    │ │ │
-│  │  └────────────────────────────────────────────────────────────────────┘ │ │
-│  │                                                                          │ │
-│  └──────────────────────────────────────────────────────────────────────────┘ │
-│                                 │                                            │
-│                    ┌────────────▼────────────┐                             │
-│                    │  Event Handlers         │                             │
-│                    ├────────────────────────┤                             │
-│                    │ - Add/Remove Courses   │                             │
-│                    │ - Add/Remove Inst.     │                             │
-│                    │ - Configure Periods    │                             │
-│                    │ - Adjust GA Params     │                             │
-│                    │ - Run Generation       │                             │
-│                    │ - Export CSV           │                             │
-│                    └────────────┬────────────┘                             │
-│                                 │                                            │
-│  ┌──────────────────────────────▼──────────────────────────────────────────┐ │
-│  │                    BUSINESS LOGIC LAYER                                  │ │
-│  ├──────────────────────────────────────────────────────────────────────────┤ │
-│  │                                                                          │ │
-│  │  ┌────────────────────────────────────────────────────────────────────┐ │ │
-│  │  │ GeneticScheduler Class (services/scheduler.ts)                     │ │ │
-│  │  ├────────────────────────────────────────────────────────────────────┤ │ │
-│  │  │                                                                    │ │ │
-│  │  │  Methods:                                                         │ │ │
-│  │  │  ├─ constructor(courses, instructors, dayLayouts)                 │ │ │
-│  │  │  ├─ initPopulation(popSize)                                       │ │ │
-│  │  │  ├─ select(): Schedule                                            │ │ │
-│  │  │  ├─ crossover(p1, p2): Schedule                                   │ │ │
-│  │  │  ├─ mutate(individual, rate)                                      │ │ │
-│  │  │  └─ solve(gen, pop, mut): Promise<Schedule>                       │ │ │
-│  │  │                                                                    │ │ │
-│  │  └────────────────────────────────────────────────────────────────────┘ │ │
-│  │                          │                                              │ │
-│  │                ┌─────────▼──────────┐                                   │ │
-│  │                │ Schedule Class     │                                   │ │
-│  │                ├───────────────────┤                                   │ │
-│  │                │ Properties:       │                                   │ │
-│  │                │ - genes[]         │                                   │ │
-│  │                │ - fitness         │                                   │ │
-│  │                │                   │                                   │ │
-│  │                │ Methods:          │                                   │ │
-│  │                │ - initialize()    │                                   │ │
-│  │                │ - calcFitness()   │                                   │ │
-│  │                └───────────────────┘                                   │ │
-│  │                                                                          │ │
-│  └──────────────────────────────────────────────────────────────────────────┘ │
-│                                 │                                            │
-│  ┌──────────────────────────────▼──────────────────────────────────────────┐ │
-│  │                    DATA MODEL LAYER                                      │ │
-│  ├──────────────────────────────────────────────────────────────────────────┤ │
-│  │                                                                          │ │
-│  │  ┌─────────────┐  ┌──────────────┐  ┌──────────┐  ┌──────────────┐    │ │
-│  │  │ Course      │  │ Instructor   │  │ Period   │  │ ClassSession │    │ │
-│  │  ├─────────────┤  ├──────────────┤  ├──────────┤  ├──────────────┤    │ │
-│  │  │ id: string  │  │ id: string   │  │ id: num  │  │ courseCode   │    │ │
-│  │  │ code        │  │ name         │  │ timeRng  │  │ dayIndex     │    │ │
-│  │  │ credHours   │  │ assignedCrs[]│  │ isBreak  │  │ periodId     │    │ │
-│  │  │ isLab       │  │              │  │ isLabSlot│  │ instName     │    │ │
-│  │  │ sessReq     │  │              │  │          │  │              │    │ │
-│  │  └─────────────┘  └──────────────┘  └──────────┘  └──────────────┘    │ │
-│  │                                                                          │ │
-│  │  ┌─────────────────────────────────────────────────────────────────┐   │ │
-│  │  │ Constants:                                                      │   │ │
-│  │  │ - DAYS: ["Mon", "Tue", ..., "Sat"]                             │   │ │
-│  │  │ - DEFAULT_PERIODS: [Period, ...]                               │   │ │
-│  │  └─────────────────────────────────────────────────────────────────┘   │ │
-│  │                                                                          │ │
-│  └──────────────────────────────────────────────────────────────────────────┘ │
-│                                                                                │
-└────────────────────────────────────────────────────────────────────────────────┘
+┌────────────────────────────────────────────────────────────────┐
+│                    BROWSER ENVIRONMENT                         │
+│                                                                 │
+│  ┌──────────────────────────────────────────────────────────┐ │
+│  │              React Application (App.jsx)                 │ │
+│  │                                                          │ │
+│  │  ┌─────────────────────────────────────────────────────┐│ │
+│  │  │  UI LAYER - React Components                        ││ │
+│  │  │                                                     ││ │
+│  │  │  ┌──────────┐  ┌────────────┐  ┌────────────────┐ ││ │
+│  │  │  │Landing   │  │  Data      │  │  Results/      │ ││ │
+│  │  │  │Page      │  │  Setup     │  │  Timetable     │ ││ │
+│  │  │  └──────────┘  └────────────┘  └────────────────┘ ││ │
+│  │  │                                                     ││ │
+│  │  │  ┌──────────┐  ┌────────────┐                      ││ │
+│  │  │  │Settings/ │  │ Header/Nav │                      ││ │
+│  │  │  │Parameters│  │            │                      ││ │
+│  │  │  └──────────┘  └────────────┘                      ││ │
+│  │  └─────────────────────────────────────────────────────┘│ │
+│  │                          ↓                              │ │
+│  │  ┌─────────────────────────────────────────────────────┐│ │
+│  │  │  STATE MANAGEMENT (useState hooks)                  ││ │
+│  │  │                                                     ││ │
+│  │  │  • courses                  • periods              ││ │
+│  │  │  • instructors              • gaParams             ││ │
+│  │  │  • schedule                 • activeTab            ││ │
+│  │  │  • isGenerating             • progress             ││ │
+│  │  └─────────────────────────────────────────────────────┘│ │
+│  │                          ↓                              │ │
+│  │  ┌─────────────────────────────────────────────────────┐│ │
+│  │  │  FUNCTION HANDLERS                                  ││ │
+│  │  │                                                     ││ │
+│  │  │  • handleAddCourse()        • downloadCSV()        ││ │
+│  │  │  • handleAddInstructor()    • downloadPDF()        ││ │
+│  │  │  • handlePeriodChange()     • runGeneration()      ││ │
+│  │  └─────────────────────────────────────────────────────┘│ │
+│  └──────────────────────────────────────────────────────────┘ │
+│                                                                 │
+│  ┌──────────────────────────────────────────────────────────┐ │
+│  │            BUSINESS LOGIC LAYER                          │ │
+│  │         (services/scheduler.js)                          │ │
+│  │                                                          │ │
+│  │  ┌────────────────────────────────────────────────────┐ │ │
+│  │  │  GeneticScheduler Class                            │ │ │
+│  │  │  ┌──────────────────────────────────────────────┐  │ │ │
+│  │  │  │ Properties:                                  │  │ │ │
+│  │  │  │ • population: Schedule[]                     │  │ │ │
+│  │  │  │ • courses: Course[]                          │  │ │ │
+│  │  │  │ • instructors: Instructor[]                  │  │ │ │
+│  │  │  │ • dayLayouts: Map<number, Period[]>         │  │ │ │
+│  │  │  └──────────────────────────────────────────────┘  │ │ │
+│  │  │                                                     │ │ │
+│  │  │  ┌──────────────────────────────────────────────┐  │ │ │
+│  │  │  │ Methods:                                     │  │ │ │
+│  │  │  │ • initPopulation()  • solve() [async]        │  │ │ │
+│  │  │  │ • select()          • crossover()            │  │ │ │
+│  │  │  │ • mutate()                                   │  │ │ │
+│  │  │  └──────────────────────────────────────────────┘  │ │ │
+│  │  └────────────────────────────────────────────────────┘ │ │
+│  │                                                          │ │
+│  │  ┌────────────────────────────────────────────────────┐ │ │
+│  │  │  Schedule Class                                    │ │ │
+│  │  │  ┌──────────────────────────────────────────────┐  │ │ │
+│  │  │  │ Properties:                                  │  │ │ │
+│  │  │  │ • genes: ClassSession[]                      │  │ │ │
+│  │  │  │ • fitness: number                            │  │ │ │
+│  │  │  └──────────────────────────────────────────────┘  │ │ │
+│  │  │                                                     │ │ │
+│  │  │  ┌──────────────────────────────────────────────┐  │ │ │
+│  │  │  │ Methods:                                     │  │ │ │
+│  │  │  │ • initialize()                               │  │ │ │
+│  │  │  │ • calculateFitness()                         │  │ │ │
+│  │  │  │ • isLabPeriod()                              │  │ │ │
+│  │  │  └──────────────────────────────────────────────┘  │ │ │
+│  │  └────────────────────────────────────────────────────┘ │ │
+│  │                                                          │ │
+│  │  ┌────────────────────────────────────────────────────┐ │ │
+│  │  │  Helper Functions                                  │ │ │
+│  │  │  • randomInt(min, max) → number                   │ │ │
+│  │  │  • randomDouble() → number                        │ │ │
+│  │  └────────────────────────────────────────────────────┘ │ │
+│  └──────────────────────────────────────────────────────────┘ │
+│                                                                 │
+│  ┌──────────────────────────────────────────────────────────┐ │
+│  │            DATA LAYER                                    │ │
+│  │         (types.js)                                       │ │
+│  │                                                          │ │
+│  │  • DAYS: string[]                                        │ │
+│  │  • DEFAULT_PERIODS: Period[]                            │ │
+│  └──────────────────────────────────────────────────────────┘ │
+└────────────────────────────────────────────────────────────────┘
+
+┌────────────────────────────────────────────────────────────────┐
+│                  BUILD SYSTEM (Vite)                           │
+│                                                                 │
+│  ┌──────────────────────────────────────────────────────────┐ │
+│  │ npm run dev                                              │ │
+│  │ └─→ vite config → React plugin → HMR enabled            │ │
+│  │     Serves at http://localhost:5173                     │ │
+│  └──────────────────────────────────────────────────────────┘ │
+│                                                                 │
+│  ┌──────────────────────────────────────────────────────────┐ │
+│  │ npm run build                                            │ │
+│  │ └─→ vite config → Optimized bundle → dist/              │ │
+│  └──────────────────────────────────────────────────────────┘ │
+└────────────────────────────────────────────────────────────────┘
 ```
 
 ---
 
-## 2. Data Flow: User Input to Schedule Output
+## 2. Data Flow Diagram
 
 ```
-USER INPUT
-    │
-    ├─┐
-    │ ├─ Add Courses (CS301, CS302, CS303, CS304, etc.)
-    │ │
-    │ ├─ Add Instructors (Dr. Alan, Dr. Codd, etc.)
-    │ │
-    │ └─ Configure Periods or use defaults
-    │
-    ▼
-STATE: courses[], instructors[], periods[]
-    │
-    ├─┐
-    │ ├─ Adjust GA Parameters:
-    │ │  ├─ Population Size: 50
-    │ │  ├─ Generations: 500
-    │ │  └─ Mutation Rate: 0.1
-    │ │
-    │ └─ All ready
-    │
-    ▼
-USER CLICKS "GENERATE TIMETABLE"
-    │
-    ▼
-runGeneration() FUNCTION
-    │
-    ├─ Create Map: dayLayouts (day index → periods)
-    │ │
-    │ └─ dayLayouts = {
-    │     0 → [Period1, Period2, ...],  // Monday
-    │     1 → [Period1, Period2, ...],  // Tuesday
-    │     ...
-    │     5 → [Period1, Period2, ...]   // Saturday
-    │   }
-    │
-    ├─ Create GeneticScheduler Instance:
-    │ │
-    │ └─ const solver = new GeneticScheduler(
-    │     courses, instructors, dayLayouts
-    │   )
-    │
-    ├─ Call solver.solve() ASYNC
-    │ │
-    │ └─ await solver.solve(
-    │     500,           // generations
-    │     50,            // population size
-    │     0.1,           // mutation rate
-    │     (gen, fitness) => setProgress({gen, fitness})
-    │   )
-    │
-    ▼
-GENETIC ALGORITHM EVOLUTION
-    │
-    └─ [See Genetic Algorithm Diagram below]
-    
-    ▼
-RESULT
-    │
-    ├─ result.genes = [ClassSession[], ClassSession[], ...]
-    │
-    ├─ result.fitness = -150 (example)
-    │
-    └─ setSchedule(result.genes)
-    
-    ▼
-STATE UPDATE
-    │
-    └─ schedule: ClassSession[] (now populated)
-    
-    ▼
-RE-RENDER RESULTS TAB
-    │
-    ├─ Display Timetable Grid
-    │ │
-    │ └─ Map schedule to Day × Period grid
-    │     ├─ Row headers: Time periods
-    │     ├─ Column headers: Days (Mon-Sat)
-    │     └─ Cells: ClassSession data
-    │
-    ├─ Show Fitness Score
-    │ │
-    │ └─ Display progress.fitness
-    │
-    └─ Enable Export Button
-        │
-        └─ Download as CSV
+USER INTERACTION
+       ↓
+┌──────────────────────────────┐
+│  User adds course/instructor │
+└──────────────────────────────┘
+       ↓
+┌──────────────────────────────────────┐
+│  Update React State                  │
+│  setCourses([...courses, newCourse]) │
+└──────────────────────────────────────┘
+       ↓
+┌──────────────────────────────────┐
+│  Component re-renders            │
+│  Display updated lists           │
+└──────────────────────────────────┘
+       ↓
+┌──────────────────────────────────────────┐
+│  User configures algorithm parameters   │
+│  Adjusts: popSize, generations, mut     │
+└──────────────────────────────────────────┘
+       ↓
+┌──────────────────────────────────┐
+│  User clicks "Generate Schedule" │
+└──────────────────────────────────┘
+       ↓
+┌──────────────────────────────────────────────────┐
+│  runGeneration() function                        │
+│  1. Create layout map (periods for all days)     │
+│  2. Instantiate GeneticScheduler                 │
+│  3. Call scheduler.solve() [ASYNC]               │
+└──────────────────────────────────────────────────┘
+       ↓
+┌──────────────────────────────────────────────────┐
+│  GENETIC ALGORITHM EXECUTION                     │
+│  (see next diagram)                              │
+└──────────────────────────────────────────────────┘
+       ↓
+┌──────────────────────────────────────────────────┐
+│  Algorithm returns Best Schedule                 │
+│  schedule.genes: ClassSession[]                  │
+│  schedule.fitness: number                        │
+└──────────────────────────────────────────────────┘
+       ↓
+┌──────────────────────────────────────────────────┐
+│  Update React State                              │
+│  setSchedule(result.genes)                       │
+│  setProgress({ gen, fitness })                   │
+└──────────────────────────────────────────────────┘
+       ↓
+┌──────────────────────────────────────────────────┐
+│  Component renders Results Tab                   │
+│  Display timetable grid                          │
+│  Show fitness score                              │
+└──────────────────────────────────────────────────┘
+       ↓
+┌──────────────────────────────────────────────────┐
+│  User can:                                       │
+│  • View timetable                                │
+│  • Download CSV                                  │
+│  • Download PDF                                  │
+│  • Export data                                   │
+└──────────────────────────────────────────────────┘
 ```
 
 ---
@@ -211,733 +189,339 @@ RE-RENDER RESULTS TAB
 ## 3. Genetic Algorithm Evolution Loop
 
 ```
-START solve(generations=500, popSize=50, mutationRate=0.1)
-    │
-    ▼
-initPopulation(50)
-    │
-    ├─ For i = 1 to 50:
-    │   ├─ Create Schedule instance
-    │   ├─ Call initialize() [random placement]
-    │   ├─ Call calculateFitness() [evaluate]
-    │   └─ Add to population
-    │
-    ▼
-MAIN LOOP: for generation = 0 to 500
-    │
-    ├─ STEP 1: SORT BY FITNESS
-    │   │
-    │   └─ population.sort(by fitness, descending)
-    │       First individual = BEST so far
-    │
-    ├─ STEP 2: ELITISM (Keep top 1)
-    │   │
-    │   └─ elite = population[0]
-    │       newPopulation = [elite]
-    │
-    ├─ STEP 3: FILL POPULATION (49 offspring)
-    │   │
-    │   └─ For i = 1 to 49:
-    │
-    │       ┌─ PARENT SELECTION ─────────────────────┐
-    │       │                                         │
-    │       │ parent1 = select()                     │
-    │       │ - Randomly pick 3 individuals          │
-    │       │ - Return best fitness of 3             │
-    │       │                                         │
-    │       │ parent2 = select()                     │
-    │       │ - Randomly pick 3 individuals          │
-    │       │ - Return best fitness of 3             │
-    │       │                                         │
-    │       └─────────────────────────────────────────┘
-    │               │
-    │               ▼
-    │       ┌─ CROSSOVER ────────────────────────────┐
-    │       │                                         │
-    │       │ child = crossover(parent1, parent2)    │
-    │       │                                         │
-    │       │ - Pick random point (0 to length)      │
-    │       │ - Take parent1 genes[0..point]         │
-    │       │ - Take parent2 genes[point..end]       │
-    │       │                                         │
-    │       │ child.genes = [                         │
-    │       │   ...parent1[0..X],                     │
-    │       │   ...parent2[X..end]                    │
-    │       │ ]                                       │
-    │       │                                         │
-    │       └─────────────────────────────────────────┘
-    │               │
-    │               ▼
-    │       ┌─ MUTATION ─────────────────────────────┐
-    │       │                                         │
-    │       │ mutate(child, 0.1)                     │
-    │       │                                         │
-    │       │ For each gene in child.genes:           │
-    │       │   if random() < 0.1:                    │
-    │       │     - Pick random day (0-5)            │
-    │       │     - Pick random period (non-break)   │
-    │       │     - Update gene:                      │
-    │       │       gene.dayIndex = newDay            │
-    │       │       gene.periodId = newPeriod         │
-    │       │                                         │
-    │       └─────────────────────────────────────────┘
-    │               │
-    │               ▼
-    │       ┌─ EVALUATE ─────────────────────────────┐
-    │       │                                         │
-    │       │ child.calculateFitness()                │
-    │       │ [See Fitness Calculation Diagram]       │
-    │       │                                         │
-    │       └─────────────────────────────────────────┘
-    │               │
-    │               ▼
-    │       newPopulation.add(child)
-    │
-    │
-    ├─ STEP 4: REPLACE POPULATION
-    │   │
-    │   └─ population = newPopulation
-    │
-    │
-    ├─ STEP 5: REPORT PROGRESS
-    │   │
-    │   └─ if (generation % 10 === 0)
-    │       └─ onProgress(generation, population[0].fitness)
-    │           └─ Updates UI progress bar
-    │
-    │
-    ├─ STEP 6: CONVERGENCE CHECK
-    │   │
-    │   └─ if (generation < 500 && fitness < 0)
-    │       └─ setTimeout(nextGeneration, 0)
-    │           [Non-blocking execution]
-    │       else
-    │           break
-    │
-    ▼
-END LOOP
-    │
-    ▼
-RETURN population[0]
-    │
-    └─ Best schedule found (lowest negative fitness)
+GENERATION 0 (Initialization)
+├─ Create Population
+│  ├─ Schedule 1: random genes, fitness = -250
+│  ├─ Schedule 2: random genes, fitness = -180
+│  ├─ Schedule 3: random genes, fitness = -320
+│  └─ ... (50 total)
+└─ Sort by fitness: [-180, -250, -320, ...]
+     ↓
+
+GENERATION 1
+├─ Elitism: Keep best (-180)
+├─ Create new schedules:
+│  ├─ Select parent1 (tournament) → Schedule 2
+│  ├─ Select parent2 (tournament) → Schedule 1
+│  ├─ Crossover(parent1, parent2) → Child
+│  ├─ Mutate(child, 0.1) → Modified Child
+│  ├─ CalculateFitness(child) → -165
+│  └─ Repeat until 50 total
+├─ New Population: [-165, -180, -220, -250, ...]
+└─ Progress: Gen 1, Fitness -165 (improving!)
+     ↓
+
+GENERATION 2
+├─ Keep best (-165)
+├─ Tournament Selection → Parents
+├─ Crossover & Mutate → New children
+├─ Evaluate children
+├─ New Population: [-158, -165, -180, -220, ...]
+└─ Progress: Gen 2, Fitness -158 (better!)
+     ↓
+
+... REPEAT FOR 500 GENERATIONS ...
+
+GENERATION 500
+├─ Keep best (now only -5)
+├─ Create children (less variation in parents)
+├─ Converged! No improvement possible
+└─ Return: Best Schedule
+     └─ genes: [ClassSession, ...]
+     └─ fitness: -5 (nearly perfect)
 ```
 
 ---
 
-## 4. Fitness Calculation Multi-Constraint System
+## 4. Schedule Class Lifecycle
 
 ```
-calculateFitness() for individual schedule
-    │
-    ├─ Initialize tracking:
-    │  ├─ slotUsage = Map<day-period, count>
-    │  ├─ instructorUsage = Map<instructor-day-period, count>
-    │  ├─ courseCounts = Map<course, #sessions>
-    │  ├─ courseDays = Map<course, Set<days>>
-    │  └─ daySchedulePeriods = Map<day, periods[]>
-    │
-    ├─ penalty = 0
-    │
-    ▼
-FOR EACH ClassSession in genes:
-    │
-    ├─────────────────────────────────────────────────┐
-    │ CONSTRAINT 1: DOUBLE BOOKING (Room Conflicts)  │
-    ├─────────────────────────────────────────────────┤
-    │                                                 │
-    │ slotKey = `${dayIndex}-${periodId}`             │
-    │ slotUsage[slotKey]++                            │
-    │                                                 │
-    │ if (slotUsage[slotKey] > 1)                     │
-    │    penalty += 200 ← CRITICAL VIOLATION          │
-    │                                                 │
-    │ Example:                                        │
-    │  - Class 1: Mon-Period1                         │
-    │  - Class 2: Mon-Period1 ← CONFLICT              │
-    │  - Penalty: 200                                 │
-    │                                                 │
-    └─────────────────────────────────────────────────┘
-    │
-    ├─────────────────────────────────────────────────┐
-    │ CONSTRAINT 2: INSTRUCTOR CONFLICTS              │
-    ├─────────────────────────────────────────────────┤
-    │                                                 │
-    │ instKey = `${instructorName}-${day}-${period}`  │
-    │ instructorUsage[instKey]++                      │
-    │                                                 │
-    │ if (instructorUsage[instKey] > 1)               │
-    │    penalty += 200 ← CRITICAL VIOLATION          │
-    │                                                 │
-    │ Example:                                        │
-    │  - Dr. Alan: Mon-08:00-09:00 (CS301)            │
-    │  - Dr. Alan: Mon-08:00-09:00 (CS303) ← CONFLICT │
-    │  - Penalty: 200                                 │
-    │                                                 │
-    └─────────────────────────────────────────────────┘
-    │
-    ├─────────────────────────────────────────────────┐
-    │ CONSTRAINT 3: LAB SLOT ALLOCATION               │
-    ├─────────────────────────────────────────────────┤
-    │                                                 │
-    │ isLabCourse = courseCode.includes('lab')        │
-    │ isLabSlot = period.isLabSlot                    │
-    │                                                 │
-    │ if (isLabCourse && !isLabSlot)                  │
-    │    penalty += 50 ← HIGH VIOLATION               │
-    │                                                 │
-    │ if (!isLabCourse && isLabSlot)                  │
-    │    penalty += 10 ← SOFT PREFERENCE              │
-    │                                                 │
-    │ Example:                                        │
-    │  - CS301 Lab scheduled in normal slot: Penalty=50│
-    │  - Organic Chemistry scheduled in lab: Penalty=10│
-    │                                                 │
-    └─────────────────────────────────────────────────┘
-    │
-    ├─ Update tracking maps (for later constraints)
-    │
-    ▼
-AFTER LOOP, CHECK GLOBAL CONSTRAINTS:
-    │
-    ├─────────────────────────────────────────────────┐
-    │ CONSTRAINT 4: COURSE FREQUENCY                  │
-    ├─────────────────────────────────────────────────┤
-    │                                                 │
-    │ For each course in courses:                     │
-    │                                                 │
-    │   scheduled = courseCounts[course.code]         │
-    │   required = course.sessionsRequired             │
-    │                                                 │
-    │   if (scheduled < required)                     │
-    │       penalty += 100 × (required - scheduled)   │
-    │       ← Missing sessions                        │
-    │                                                 │
-    │   if (scheduled > required)                     │
-    │       penalty += 50 × (scheduled - required)    │
-    │       ← Extra sessions                          │
-    │                                                 │
-    │ Example:                                        │
-    │  - CS301 needs 3 sessions, scheduled 2          │
-    │  - Penalty: 100 × 1 = 100                       │
-    │  - CS302 needs 3 sessions, scheduled 4          │
-    │  - Penalty: 50 × 1 = 50                         │
-    │                                                 │
-    └─────────────────────────────────────────────────┘
-    │
-    ├─────────────────────────────────────────────────┐
-    │ CONSTRAINT 5: SAME-DAY MULTIPLE SESSIONS        │
-    ├─────────────────────────────────────────────────┤
-    │                                                 │
-    │ For each course in courseDays:                  │
-    │                                                 │
-    │   sessions = courseCounts[course]               │
-    │   days = courseDays[course].size                │
-    │                                                 │
-    │   if (sessions > days)                          │
-    │       penalty += 30 × (sessions - days)         │
-    │                                                 │
-    │ Example:                                        │
-    │  - CS301: 3 sessions on 2 days (Mon, Wed, Wed)  │
-    │  - Days = 2, Sessions = 3                       │
-    │  - Penalty: 30 × 1 = 30                         │
-    │                                                 │
-    └─────────────────────────────────────────────────┘
-    │
-    ├─────────────────────────────────────────────────┐
-    │ CONSTRAINT 6: GAP MINIMIZATION                  │
-    ├─────────────────────────────────────────────────┤
-    │                                                 │
-    │ For each day in daySchedulePeriods:             │
-    │   periods = daySchedulePeriods[day]             │
-    │   periods.sort()                                │
-    │                                                 │
-    │   For i = 0 to periods.length - 1:              │
-    │     gap = periods[i+1] - periods[i] - 1         │
-    │     if (gap > 0)                                │
-    │         penalty += gap × 20                     │
-    │                                                 │
-    │ Example:                                        │
-    │  - Monday: Periods [1, 2, 4] (periods 1,2,3,4) │
-    │  - Gap1: 2 - 1 - 1 = 0                          │
-    │  - Gap2: 4 - 2 - 1 = 1 ← FREE SLOT              │
-    │  - Penalty: 1 × 20 = 20                         │
-    │                                                 │
-    └─────────────────────────────────────────────────┘
-    │
-    ▼
-TOTAL PENALTY CALCULATION
-    │
-    └─ Total Penalty = Sum of all violations
-        │
-        ├─ Best: 0 (no violations)
-        ├─ Good: -100 to -200 (minor issues)
-        ├─ Fair: -200 to -500 (moderate issues)
-        ├─ Poor: -500 to -1000 (major issues)
-        └─ Worst: < -1000 (severe violations)
-    │
-    ▼
-FITNESS ASSIGNMENT
-    │
-    └─ fitness = -penalty
-        ├─ Higher fitness = Better schedule
-        ├─ Fitness 0 = Perfect schedule
-        └─ Fitness < 0 = Violations present
+┌──────────────────────────┐
+│  new Schedule()          │
+│  Constructor             │
+│  • genes = []            │
+│  • fitness = 0           │
+│  • courses = ref         │
+│  • instructors = ref     │
+│  • dayLayouts = ref      │
+└──────────────────────────┘
+         ↓
+┌──────────────────────────────────────┐
+│  schedule.initialize()               │
+│  Creates random genes:               │
+│  For each course:                    │
+│    For each session:                 │
+│      Random day, random period       │
+│      Create ClassSession             │
+│      Push to genes                   │
+└──────────────────────────────────────┘
+         ↓
+┌────────────────────────────────────────┐
+│  schedule.calculateFitness()           │
+│  Evaluate all constraints:             │
+│  1. Check double bookings              │
+│  2. Check instructor conflicts         │
+│  3. Check lab violations               │
+│  4. Check course frequency             │
+│  5. Check distribution                 │
+│  6. Check gaps                         │
+│  fitness = -totalPenalty               │
+└────────────────────────────────────────┘
+         ↓
+┌──────────────────────────────┐
+│  Schedule Ready to Use       │
+│  • genes: [sessions...]      │
+│  • fitness: -450             │
+│  • Can be evaluated, copied  │
+│  • Can be parent in breeding │
+└──────────────────────────────┘
 ```
 
 ---
 
-## 5. UI Component Hierarchy & Tabs
+## 5. Fitness Calculation Breakdown
 
 ```
-App (Root Component)
-│
-├─ State Variables
-│  ├─ showLanding: boolean
-│  ├─ activeTab: 'setup' | 'settings' | 'results'
-│  ├─ courses: Course[]
-│  ├─ instructors: Instructor[]
-│  ├─ periods: Period[]
-│  ├─ gaParams: {populationSize, generations, mutationRate}
-│  ├─ schedule: ClassSession[] | null
-│  ├─ isGenerating: boolean
-│  ├─ progress: {gen, fitness}
-│  └─ [new course/instructor input states]
-│
-├─ Conditional Render
-│ │
-│ ├─ IF showLanding:
-│ │  │
-│ │  └─ LandingPage Component
-│ │      ├─ Hero Section
-│ │      │  ├─ Badge (AI-Powered)
-│ │      │  ├─ Title (GenSchedule AI)
-│ │      │  ├─ Subtitle
-│ │      │  └─ CTA Button
-│ │      │
-│ │      └─ Feature Cards
-│ │          ├─ Card 1: Genetic Evolution
-│ │          ├─ Card 2: Conflict Resolution
-│ │          └─ Card 3: Smart Visuals
-│ │
-│ └─ ELSE (Workspace):
-│    │
-│    ├─ Header Component
-│    │  ├─ Logo
-│    │  ├─ Title
-│    │  ├─ Status Badge
-│    │  └─ Back Button
-│    │
-│    ├─ Tab Navigation
-│    │  ├─ "1. Data Setup" tab button
-│    │  ├─ "2. Parameters" tab button
-│    │  └─ "3. Timetable Results" tab button
-│    │
-│    └─ Content Area (activeTab-dependent):
-│
-│       IF activeTab === 'setup':
-│       │
-│       ├─ TWO-COLUMN GRID
-│       │
-│       ├─ LEFT: Courses Section
-│       │  ├─ Header
-│       │  │  ├─ Icon + Title
-│       │  │  └─ Count Badge
-│       │  │
-│       │  ├─ Courses List
-│       │  │  ├─ IF empty: EmptyState
-│       │  │  └─ IF courses exist:
-│       │  │      └─ For each course:
-│       │  │          ├─ Course code
-│       │  │          ├─ Sessions count
-│       │  │          ├─ Lab badge
-│       │  │          └─ Delete button
-│       │  │
-│       │  └─ Add Course Form
-│       │     ├─ Code input
-│       │     ├─ Checkbox: Is Lab
-│       │     ├─ Sessions input
-│       │     └─ Add button
-│       │
-│       ├─ RIGHT: Instructors Section
-│       │  ├─ Header
-│       │  │  ├─ Icon + Title
-│       │  │  └─ Count Badge
-│       │  │
-│       │  ├─ Instructors List
-│       │  │  ├─ IF empty: EmptyState
-│       │  │  └─ IF instructors exist:
-│       │  │      └─ For each instructor:
-│       │  │          ├─ Name
-│       │  │          ├─ Assigned courses (chips)
-│       │  │          └─ Delete button
-│       │  │
-│       │  └─ Add Instructor Form
-│       │     ├─ Name input
-│       │     ├─ Courses input (comma-separated)
-│       │     └─ Add button
-│       │
-│       └─ Generate Button (spans full width)
-│          └─ "Generate Timetable" CTA
-│
-│
-│       IF activeTab === 'settings':
-│       │
-│       ├─ TWO-SECTION LAYOUT
-│       │
-│       ├─ SECTION 1: Time Layout Configuration
-│       │  ├─ Header
-│       │  │  ├─ Icon
-│       │  │  ├─ Title
-│       │  │  └─ Description
-│       │  │
-│       │  ├─ Periods Table
-│       │  │  ├─ Header Row
-│       │  │  │  ├─ # (Index)
-│       │  │  │  ├─ Time Range
-│       │  │  │  ├─ Type (CLASS/BREAK)
-│       │  │  │  ├─ Lab? (Checkbox)
-│       │  │  │  └─ Actions
-│       │  │  │
-│       │  │  └─ For each period:
-│       │  │      ├─ Index
-│       │  │      ├─ Start time input
-│       │  │      ├─ Dash separator
-│       │  │      ├─ End time input
-│       │  │      ├─ CLASS/BREAK button
-│       │  │      ├─ Lab checkbox
-│       │  │      └─ Delete button
-│       │  │
-│       │  └─ Add Period Button
-│       │
-│       └─ SECTION 2: Algorithm Parameters
-│          ├─ Header
-│          │  ├─ Icon
-│          │  ├─ Title
-│          │  └─ Description
-│          │
-│          ├─ Parameter 1: Population Size
-│          │  ├─ Label + Value badge
-│          │  ├─ Range slider (10-200)
-│          │  └─ Help text
-│          │
-│          ├─ Parameter 2: Max Generations
-│          │  ├─ Label + Value badge
-│          │  ├─ Range slider (100-2000)
-│          │  └─ Help text
-│          │
-│          ├─ Parameter 3: Mutation Rate
-│          │  ├─ Label + Value badge
-│          │  ├─ Range slider (0.01-0.5)
-│          │  └─ Help text
-│          │
-│          └─ Back to Setup Link
-│
-│
-│       IF activeTab === 'results':
-│       │
-│       ├─ IF isGenerating:
-│       │  │
-│       │  └─ Loading State
-│       │     ├─ Animated spinner
-│       │     ├─ "Evolving Schedule..." text
-│       │     ├─ Description
-│       │     ├─ Progress bar
-│       │     └─ Gen/Fitness counter
-│       │
-│       ├─ IF !schedule && !isGenerating:
-│       │  │
-│       │  └─ EmptyState
-│       │     ├─ Icon
-│       │     ├─ Title
-│       │     └─ Call to action
-│       │
-│       └─ IF schedule && !isGenerating:
-│          │
-│          ├─ Header
-│          │  ├─ "Generated Schedule" title
-│          │  ├─ Fitness badge
-│          │  └─ Export CSV button
-│          │
-│          ├─ Timetable Grid
-│          │  ├─ Header row
-│          │  │  ├─ "Time / Day" cell (sticky)
-│          │  │  └─ For each day (Mon-Sat):
-│          │  │      └─ Day name
-│          │  │
-│          │  └─ For each period:
-│          │     ├─ Sticky time column
-│          │     │  ├─ Time range
-│          │     │  └─ IF break: "BREAK" badge
-│          │     │
-│          │     └─ For each day:
-│          │         ├─ IF break period:
-│          │         │  └─ Striped/gray background
-│          │         │
-│          │         └─ IF session exists:
-│          │            ├─ Course code
-│          │            ├─ IF lab: "LAB" badge
-│          │            ├─ Instructor name
-│          │            └─ Color-coded background
-│          │         
-│          │         OR IF no session:
-│          │            └─ Dashed border placeholder
-│          │
-│          └─ Success Message
-│             ├─ Checkmark icon
-│             ├─ "Optimization Complete"
-│             └─ Explanation text
-│
-└─ Global Styling
-   ├─ Tailwind CSS classes
-   ├─ Custom animations
-   │  ├─ fade-in-up
-   │  ├─ gradient-x
-   │  ├─ animate-ping
-   │  └─ animate-blob
-   └─ Responsive breakpoints
-      ├─ Mobile
-      ├─ Tablet
-      └─ Desktop
+SCHEDULE EVALUATION
+       ↓
+CHECK 1: ROOM CONFLICTS
+├─ For each gene:
+│  ├─ Key: "dayIndex-periodId"
+│  ├─ Count how many times used
+│  └─ If count > 1: penalty -= 200
+└─ Prevents double-booking
+
+CHECK 2: INSTRUCTOR CONFLICTS
+├─ For each gene:
+│  ├─ Key: "instructor-dayIndex-periodId"
+│  ├─ Count assignments
+│  └─ If count > 1: penalty -= 200
+└─ Instructor can't teach twice
+
+CHECK 3: LAB VIOLATIONS
+├─ For each gene:
+│  ├─ If course is lab AND slot not lab
+│  │  └─ penalty -= 50
+│  └─ If course not lab AND slot is lab
+│     └─ penalty -= 10
+└─ Lab courses need lab slots
+
+CHECK 4: COURSE FREQUENCY
+├─ For each course:
+│  ├─ Count scheduled sessions
+│  ├─ Compare to required
+│  ├─ If too few: penalty -= 100 × (required - scheduled)
+│  └─ If too many: penalty -= 50 × (scheduled - required)
+└─ Respect course requirements
+
+CHECK 5: DISTRIBUTION
+├─ For each course:
+│  ├─ Count sessions per day
+│  ├─ Try to spread across days
+│  └─ Multiple same-day: penalty -= 30 × extra
+└─ Spread out course sessions
+
+CHECK 6: GAP ANALYSIS
+├─ For each day:
+│  ├─ Sort periods chronologically
+│  ├─ Find gaps between classes
+│  └─ penalty -= 20 × gapSize
+└─ Minimize free periods between classes
+
+       ↓
+FITNESS = -TOTAL_PENALTY
+- fitness > 0:  Good schedule
+- fitness == 0: Perfect schedule
+- fitness < -1000: Bad schedule
 ```
 
 ---
 
-## 6. Data Exchange in Scheduler
+## 6. Genetic Operators Visualization
+
+### Selection (Tournament)
 
 ```
-App.tsx → GeneticScheduler
-─────────────────────────────────────────────
+Population [S1, S2, S3, S4, S5, S6, ...]
 
-Input Data Structure:
-{
-  courses: [
-    {id, code, creditHours, isLab, sessionsRequired},
-    ...
-  ],
-  
-  instructors: [
-    {id, name, assignedCourses: [codes]},
-    ...
-  ],
-  
-  dayLayouts: Map {
-    0 → [Period, Period, ...],  // Monday periods
-    1 → [Period, Period, ...],  // Tuesday periods
-    ...
-    5 → [Period, Period, ...]   // Saturday periods
-  }
-}
-        │
-        ▼
-GeneticScheduler Evolution Process
-        │
-        ▼
-Population: [Schedule, Schedule, ..., Schedule]
-        │
-        each Schedule contains:
-        ├─ genes: [
-        │   {courseCode, dayIndex, periodId, instructorName},
-        │   {courseCode, dayIndex, periodId, instructorName},
-        │   ...
-        │ ]
-        │
-        └─ fitness: -150 (example)
-        │
-        ▼
-After 500 generations:
-        │
-        ▼
-Output: BestSchedule {
-  genes: ClassSession[],
-  fitness: number
-}
-        │
-        ├─ genes: [
-        │   {code: "CS301 Algo", day: 0, period: 1, inst: "Dr. Alan"},
-        │   {code: "CS302 DB", day: 1, period: 2, inst: "Dr. Codd"},
-        │   ...
-        │ ]
-        │
-        └─ fitness: -0 (optimal) or -150 (near-optimal)
-                │
-                ▼
-            App.tsx
-                │
-                ├─ setSchedule(result.genes)
-                ├─ setProgress({gen: 500, fitness: -0})
-                ├─ setIsGenerating(false)
-                └─ Re-render Results tab
-                        │
-                        ▼
-                    Timetable Grid Display
+TOURNAMENT 1:
+├─ Randomly pick 3: [S2(-150), S4(-220), S1(-180)]
+└─ Return best: S2(-150) ← Selected as parent
+
+TOURNAMENT 2:
+├─ Randomly pick 3: [S3(-200), S5(-160), S6(-190)]
+└─ Return best: S5(-160) ← Selected as parent
+```
+
+### Crossover (Single Point)
+
+```
+Parent 1 genes:
+[C1-Mon-1, C2-Tue-2, C3-Wed-3, C4-Thu-4, C5-Fri-5]
+
+Parent 2 genes:
+[C1-Mon-2, C2-Wed-1, C3-Fri-4, C4-Mon-5, C5-Thu-3]
+
+Random crossover point: 3
+
+Child genes (crossover):
+[C1-Mon-1, C2-Tue-2, C3-Wed-3 | C4-Mon-5, C5-Thu-3]
+                       ↑ crossover point
+```
+
+### Mutation (Random Change)
+
+```
+Child genes:
+[C1-Mon-1, C2-Tue-2, C3-Wed-3, C4-Thu-4, C5-Fri-5]
+
+For each gene (mutation rate = 0.2 = 20% chance):
+├─ Gene 1: random() = 0.05 < 0.2 ✓ MUTATE
+│  └─ Change to: C1-Wed-4 (random day/period)
+├─ Gene 2: random() = 0.75 > 0.2 ✗ KEEP
+├─ Gene 3: random() = 0.18 < 0.2 ✓ MUTATE
+│  └─ Change to: C3-Thu-6
+├─ Gene 4: random() = 0.30 > 0.2 ✗ KEEP
+└─ Gene 5: random() = 0.12 < 0.2 ✓ MUTATE
+   └─ Change to: C5-Mon-3
+
+Mutated child:
+[C1-Wed-4, C2-Tue-2, C3-Thu-6, C4-Thu-4, C5-Mon-3]
 ```
 
 ---
 
-## 7. Event Handler Flow
+## 7. UI State Management Flow
 
 ```
-USER ACTIONS → EVENT HANDLERS → STATE UPDATES → RE-RENDER
-
-┌─────────────────────────────────────────────────────────┐
-│ Add Course Button Clicked                               │
-├─────────────────────────────────────────────────────────┤
-│                                                         │
-│ handleAddCourse()                                       │
-│ ├─ Validate course code (not empty)                     │
-│ ├─ Create course object with:                           │
-│ │  ├─ id: Date.now()                                    │
-│ │  ├─ code: newCourse.code                              │
-│ │  ├─ creditHours: newCourse.creditHours                │
-│ │  ├─ isLab: newCourse.isLab                            │
-│ │  └─ sessionsRequired: newCourse.sessionsRequired      │
-│ │                                                       │
-│ ├─ setCourses([...courses, newCourse])                  │
-│ └─ setNewCourse({...reset form...})                     │
-│                                                         │
-└─────────────────────────────────────────────────────────┘
-
-┌─────────────────────────────────────────────────────────┐
-│ Delete Course Button Clicked                            │
-├─────────────────────────────────────────────────────────┤
-│                                                         │
-│ setCourses(courses.filter(c => c.id !== deletedId))    │
-│                                                         │
-└─────────────────────────────────────────────────────────┘
-
-┌─────────────────────────────────────────────────────────┐
-│ Period Edit (Time, Type, Lab)                           │
-├─────────────────────────────────────────────────────────┤
-│                                                         │
-│ handlePeriodChange(index, field, value)                 │
-│ ├─ newPeriods = [...periods]                            │
-│ ├─ period = {...newPeriods[index]}                      │
-│ │                                                       │
-│ ├─ IF field === 'start' or 'end':                       │
-│ │  └─ Update timeRange string                           │
-│ │                                                       │
-│ ├─ ELSE:                                                │
-│ │  └─ period[field] = value                             │
-│ │                                                       │
-│ ├─ newPeriods[index] = period                           │
-│ └─ setPeriods(newPeriods)                               │
-│                                                         │
-└─────────────────────────────────────────────────────────┘
-
-┌─────────────────────────────────────────────────────────┐
-│ GA Parameter Slider Changed                             │
-├─────────────────────────────────────────────────────────┤
-│                                                         │
-│ setGaParams({                                           │
-│   ...gaParams,                                          │
-│   populationSize: newValue  // or generations, etc.     │
-│ })                                                      │
-│                                                         │
-└─────────────────────────────────────────────────────────┘
-
-┌─────────────────────────────────────────────────────────┐
-│ "Generate Timetable" Button Clicked                     │
-├─────────────────────────────────────────────────────────┤
-│                                                         │
-│ runGeneration() ASYNC                                   │
-│ ├─ setIsGenerating(true)                                │
-│ ├─ setSchedule(null)                                    │
-│ ├─ setActiveTab('results')                              │
-│ │                                                       │
-│ ├─ Create dayLayouts Map:                               │
-│ │  └─ for (0-5 days): layoutMap.set(day, periods)       │
-│ │                                                       │
-│ ├─ new GeneticScheduler(courses, instructors, map)      │
-│ │                                                       │
-│ ├─ await scheduler.solve(                               │
-│ │   gaParams.generations,                               │
-│ │   gaParams.populationSize,                            │
-│ │   gaParams.mutationRate,                              │
-│ │   (gen, fit) => setProgress({gen, fitness: fit})      │
-│ │ )                                                     │
-│ │                                                       │
-│ ├─ setSchedule(result.genes)                            │
-│ └─ setIsGenerating(false)                               │
-│                                                         │
-└─────────────────────────────────────────────────────────┘
-
-┌─────────────────────────────────────────────────────────┐
-│ Export CSV Button Clicked                               │
-├─────────────────────────────────────────────────────────┤
-│                                                         │
-│ downloadCSV()                                           │
-│ ├─ Create CSV header                                    │
-│ ├─ Sort schedule by day then period                     │
-│ ├─ For each session:                                    │
-│ │  └─ csv += "Day,Period,Time,Course,Instructor\n"      │
-│ │                                                       │
-│ ├─ Create Blob from CSV string                          │
-│ ├─ Create download link                                 │
-│ ├─ Click link to trigger download                       │
-│ └─ File: timetable.csv                                  │
-│                                                         │
-└─────────────────────────────────────────────────────────┘
+App.jsx State Management
+       ↓
+┌─────────────────────────────────────────┐
+│  showLanding: boolean                   │
+│  └─ true → Show landing page            │
+│  └─ false → Show main app               │
+└─────────────────────────────────────────┘
+       ↓
+┌─────────────────────────────────────────┐
+│  activeTab: 'setup' | 'settings' |      │
+│              'results'                  │
+│  └─ Controls which tab is visible       │
+└─────────────────────────────────────────┘
+       ↓
+┌──────────────────────────────────────────┐
+│  Data State                              │
+│  ├─ courses: Course[]                    │
+│  ├─ instructors: Instructor[]            │
+│  ├─ periods: Period[]                    │
+│  └─ schedule: ClassSession[] | null      │
+└──────────────────────────────────────────┘
+       ↓
+┌──────────────────────────────────────────┐
+│  Algorithm State                         │
+│  ├─ gaParams: {popSize, generations,     │
+│  │              mutationRate}            │
+│  ├─ isGenerating: boolean                │
+│  └─ progress: {gen, fitness}             │
+└──────────────────────────────────────────┘
+       ↓
+┌──────────────────────────────────────────┐
+│  Form Input State                        │
+│  ├─ newCourse: Partial<Course>           │
+│  └─ newInst: {name, courseCodes}         │
+└──────────────────────────────────────────┘
 ```
 
 ---
 
-## 8. Type Definition Relationships
+## 8. Component Hierarchy
 
 ```
-App Component Uses:
-├─ Course[] (array of course objects)
-│  ├─ id: string
-│  ├─ code: string (e.g., "CS301 Algo")
-│  ├─ creditHours: number
-│  ├─ isLab: boolean
-│  └─ sessionsRequired: number (e.g., 3)
-│
-├─ Instructor[] (array of instructor objects)
-│  ├─ id: string
-│  ├─ name: string
-│  └─ assignedCourses: string[] (array of course codes)
-│
-├─ Period[] (array of time period objects)
-│  ├─ id: number (sequential)
-│  ├─ timeRange: string (e.g., "08:00-09:00")
-│  ├─ isBreak: boolean
-│  └─ isLabSlot: boolean
-│
-└─ ClassSession[] (output from scheduler)
-   ├─ courseCode: string
-   ├─ dayIndex: number (0=Monday, 5=Saturday)
-   ├─ periodId: number (references Period.id)
-   └─ instructorName: string
-
-Relationships:
-─────────────
-
-ClassSession.courseCode → Course.code
-ClassSession.instructorName → Instructor.name
-ClassSession.periodId → Period.id
-ClassSession.dayIndex → DAYS array (0-5)
-
-Example Data Flow:
-──────────────────
-
-Course "CS301 Algo"
-    ↓ assigned to
-Instructor "Dr. Alan Turing"
-    ↓ scheduled as
-ClassSession {
-  courseCode: "CS301 Algo",
-  instructorName: "Dr. Alan Turing",
-  dayIndex: 0 (Monday),
-  periodId: 1
-}
-    ↓ rendered as
-Cell in Timetable:
-  Time: periods.find(p => p.id === 1).timeRange
-  Day: DAYS[0] = "Monday"
-  Content: "CS301 Algo - Dr. Alan Turing"
+App (Main)
+├── {showLanding ? (
+│   └── LandingPage
+│       ├── Hero section
+│       ├── Feature cards
+│       └── Start button
+│   ) : (
+│   └── Main App UI
+│       ├── Header
+│       │   └── Logo + branding
+│       ├── Tabs Navigation
+│       │   ├── "1. Data Setup"
+│       │   ├── "2. Parameters"
+│       │   └── "3. Results"
+│       ├── Main Content Area
+│       │   ├── Setup Tab (if active)
+│       │   │   ├── Courses Section
+│       │   │   │   ├── Course list
+│       │   │   │   ├── EmptyState (if empty)
+│       │   │   │   └── Add course form
+│       │   │   ├── Instructors Section
+│       │   │   │   ├── Instructor list
+│       │   │   │   ├── EmptyState (if empty)
+│       │   │   │   └── Add instructor form
+│       │   │   └── Generate button
+│       │   ├── Settings Tab (if active)
+│       │   │   ├── Time Periods Section
+│       │   │   │   ├── Periods list
+│       │   │   │   └── Add period button
+│       │   │   └── Algorithm Parameters
+│       │   │       ├── Population size slider
+│       │   │       ├── Generations slider
+│       │   │       └── Mutation rate slider
+│       │   └── Results Tab (if active)
+│       │       ├── {isGenerating ? (
+│       │       │   └── Loading spinner + progress
+│       │       │   ) : !schedule ? (
+│       │       │   └── EmptyState
+│       │       │   ) : (
+│       │       │   └── Results Display
+│       │       │       ├── Title + fitness
+│       │       │       ├── Export buttons (CSV, PDF)
+│       │       │       └── Timetable grid
+│       │       └── Success message
+│       └── Footer
+│           └── (optional)
+│   )}
 ```
 
 ---
 
-This document provides complete visual reference for all system components, flows, and interactions in GenSchedule AI.
+## 9. Algorithm Decision Tree
+
+```
+START
+  ↓
+Is there initial population?
+├─ NO → Create N random schedules
+│       └─ For each: initialize() → calculateFitness()
+└─ YES → Continue
+
+  ↓
+For each generation (0 to maxGen):
+  ├─ Sort population by fitness (best first)
+  ├─ Save best (elitism)
+  │
+  ├─ While population < targetSize:
+  │   ├─ Parent1 = select() [tournament]
+  │   ├─ Parent2 = select() [tournament]
+  │   ├─ Child = crossover(P1, P2)
+  │   ├─ mutate(Child, mutationRate)
+  │   ├─ Child.calculateFitness()
+  │   └─ Add Child to new population
+  │
+  ├─ Replace old population
+  ├─ Call onProgress(gen, bestFitness)
+  │
+  └─ Converged or max gen reached?
+     ├─ YES → Return best schedule
+     └─ NO → Continue to next generation
+
+END
+```
+
+---
+
+**Last Updated:** December 23, 2025  
+**Language:** Pure JavaScript (ES6+)  
+**Framework:** React 19 with Vite 6.2
